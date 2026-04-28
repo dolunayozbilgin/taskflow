@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useBoardStore } from '../store/boardStore'
+import Spinner from '../components/Spinner'
 
 export default function BoardsPage() {
   const { user, signOut } = useAuthStore()
-  const { boards, fetchBoards, createBoard } = useBoardStore()
+  const { boards, loading, fetchBoards, createBoard, deleteBoard } = useBoardStore()
   const [title, setTitle] = useState('')
   const [creating, setCreating] = useState(false)
   const [showInput, setShowInput] = useState(false)
+  const [boardToDelete, setBoardToDelete] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => { fetchBoards() }, [])
@@ -56,13 +58,16 @@ export default function BoardsPage() {
           <span style={{ fontWeight: '700', fontSize: '16px', color: '#1a1a2e' }}>TaskFlow</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '13px', color: '#888' }}>{user?.email}</span>
+          <span style={{ fontSize: '13px', color: '#888' }} className="hide-mobile">{user?.email}</span>
           <button
             onClick={signOut}
+            onMouseEnter={e => { e.currentTarget.style.background = '#fff5f5'; e.currentTarget.style.borderColor = '#feb2b2'; e.currentTarget.style.color = '#c53030' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#666' }}
             style={{
               background: 'none', border: '1px solid #e0e0e0',
               borderRadius: '8px', padding: '6px 14px',
               fontSize: '13px', color: '#666', cursor: 'pointer',
+              transition: 'all 0.15s',
             }}
           >
             Çıkış
@@ -160,6 +165,21 @@ export default function BoardsPage() {
                 e.currentTarget.style.boxShadow = 'none'
               }}
             >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setBoardToDelete(board)
+                }}
+                style={{
+                  position: 'absolute', top: '10px', right: '10px',
+                  background: 'rgba(255,255,255,0.85)', border: 'none',
+                  borderRadius: '6px', width: '28px', height: '28px',
+                  cursor: 'pointer', fontSize: '14px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  opacity: 0.7,
+                }}
+                title="Sil"
+              >🗑</button>
               <div style={{
                 width: '36px', height: '36px',
                 background: 'linear-gradient(135deg, #667eea, #764ba2)',
@@ -174,7 +194,12 @@ export default function BoardsPage() {
             </div>
           ))}
 
-          {boards.length === 0 && !showInput && (
+          {loading && (
+            <div style={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'center', padding: '40px' }}>
+              <Spinner size={28} />
+            </div>
+          )}
+          {!loading && boards.length === 0 && !showInput && (
             <div style={{
               gridColumn: '1/-1', textAlign: 'center',
               padding: '60px 20px', color: '#aaa', fontSize: '14px',
@@ -184,6 +209,38 @@ export default function BoardsPage() {
           )}
         </div>
       </div>
+      {boardToDelete && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+        }} onClick={() => setBoardToDelete(null)}>
+          <div style={{
+            background: 'white', borderRadius: '16px', padding: '24px',
+            width: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: '700', color: '#1a1a2e' }}>
+              Board'u sil
+            </h3>
+            <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#666', lineHeight: '1.5' }}>
+              <strong>'{boardToDelete.title}'</strong> board'unu silmek istediğine emin misin? Tüm sütunlar ve kartlar da kalıcı olarak silinir.
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setBoardToDelete(null)} style={{
+                background: 'none', border: '1px solid #e0e0e0', borderRadius: '8px',
+                padding: '9px 18px', fontSize: '14px', color: '#666', cursor: 'pointer',
+              }}>İptal</button>
+              <button onClick={async () => {
+                await deleteBoard(boardToDelete.id)
+                setBoardToDelete(null)
+              }} style={{
+                background: '#e53e3e', color: 'white',
+                border: 'none', borderRadius: '8px', padding: '9px 20px',
+                fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+              }}>Sil</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

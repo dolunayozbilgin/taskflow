@@ -30,6 +30,14 @@ export const useBoardStore = create((set, get) => ({
     return data
   },
 
+  updateBoardTitle: async (boardId, title) => {
+    await supabase.from('boards').update({ title }).eq('id', boardId)
+    set(s => ({
+      boards: s.boards.map(b => b.id === boardId ? { ...b, title } : b),
+      currentBoard: s.currentBoard?.id === boardId ? { ...s.currentBoard, title } : s.currentBoard,
+    }))
+  },
+
   deleteBoard: async (boardId) => {
     await supabase.from('boards').delete().eq('id', boardId)
     set(s => ({ boards: s.boards.filter(b => b.id !== boardId) }))

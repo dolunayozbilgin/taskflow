@@ -8,3 +8,16 @@ body {
   background: #f1f5f9;
   min-height: 100vh;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .hide-mobile { display: none !important; }
+}

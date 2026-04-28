@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useBoardStore } from '../store/boardStore'
 import { useAuthStore } from '../store/authStore'
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
+  DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors,
   closestCorners, defaultDropAnimationSideEffects,
 } from '@dnd-kit/core'
 import {
@@ -11,6 +11,7 @@ import {
   arrayMove, useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import Spinner from '../components/Spinner'
 
 function CardItem({ card, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -79,7 +80,7 @@ function Column({ column, cards, boardId, onEditColumn, onDeleteColumn }) {
       transform: CSS.Transform.toString(transform), transition,
       opacity: isDragging ? 0.5 : 1,
       background: '#f0f2ff', borderRadius: '14px',
-      padding: '14px', width: '280px', flexShrink: 0,
+      padding: '14px', width: 'min(280px, 80vw)', flexShrink: 0,
       maxHeight: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', cursor: 'grab' }}
@@ -188,17 +189,25 @@ export default function BoardPage() {
   const { id: boardId } = useParams()
   const navigate = useNavigate()
   const { signOut } = useAuthStore()
-  const { currentBoard, columns, cards, fetchBoard, fetchColumns, fetchCards, createColumn, updateColumnTitle, deleteColumn, reorderColumns, moveCard } = useBoardStore()
+  const { currentBoard, columns, cards, fetchBoard, updateBoardTitle, fetchColumns, fetchCards, createColumn, updateColumnTitle, deleteColumn, reorderColumns, moveCard } = useBoardStore()
   const [newColTitle, setNewColTitle] = useState('')
   const [showColInput, setShowColInput] = useState(false)
   const [editingColumn, setEditingColumn] = useState(null)
   const [editColTitle, setEditColTitle] = useState('')
   const [activeItem, setActiveItem] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [editingBoardTitle, setEditingBoardTitle] = useState(false)
+  const [boardTitleDraft, setBoardTitleDraft] = useState('')
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 1 } }))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  )
 
   useEffect(() => {
+    setLoading(true)
     Promise.all([fetchBoard(boardId), fetchColumns(boardId), fetchCards(boardId)])
+      .finally(() => setLoading(false))
   }, [boardId])
 
   const handleAddColumn = async (e) => {
@@ -282,20 +291,66 @@ export default function BoardPage() {
             fontSize: '13px', color: '#667eea', fontWeight: '600', padding: 0,
           }}>← Board'larım</button>
           {currentBoard && (
-            <span style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a2e' }}>
+            <span
+              onClick={() => { setBoardTitleDraft(currentBoard.title); setEditingBoardTitle(true) }}
+              style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a2e', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px' }}
+              title="Düzenle"
+            >
               {currentBoard.title}
             </span>
           )}
         </div>
-        <button onClick={signOut} style={{
-          background: 'none', border: '1px solid #e0e0e0', borderRadius: '8px',
-          padding: '6px 14px', fontSize: '13px', color: '#666', cursor: 'pointer',
-        }}>Çıkış</button>
+        <button onClick={signOut}
+          onMouseEnter={e => { e.currentTarget.style.background = '#fff5f5'; e.currentTarget.style.borderColor = '#feb2b2'; e.currentTarget.style.color = '#c53030' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#666' }}
+          style={{
+            background: 'none', border: '1px solid #e0e0e0', borderRadius: '8px',
+            padding: '6px 14px', fontSize: '13px', color: '#666', cursor: 'pointer',
+            transition: 'all 0.15s',
+          }}>Çıkış</button>
       </div>
 
+      {loading ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Spinner size={32} />
+        </div>
+      ) : (
       <div style={{ flex: 1, overflowX: 'auto', padding: '24px' }}>
         <DndContext sensors={sensors} collisionDetection={closestCorners}
           onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          {columns.length === 0 && !showColInput && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              padding: '60px 20px', textAlign: 'center',
+              animation: 'fadeIn 0.3s ease-out',
+            }}>
+              <div style={{
+                width: '72px', height: '72px',
+                background: 'linear-gradient(135deg, #667eea33, #764ba233)',
+                borderRadius: '20px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '20px',
+              }}>
+                <svg width="32" height="32" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="6" height="18" rx="1.5"/>
+                  <rect x="11" y="3" width="6" height="12" rx="1.5"/>
+                  <rect x="19" y="3" width="2" height="8" rx="1"/>
+                </svg>
+              </div>
+              <h2 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '700', color: '#1a1a2e' }}>
+                Board'un boş
+              </h2>
+              <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#888', maxWidth: '300px' }}>
+                Görevlerini organize etmek için sütun ekleyerek başla. Örneğin "Yapılacak", "Devam Ediyor", "Tamamlandı".
+              </p>
+              <button onClick={() => setShowColInput(true)} style={{
+                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                color: 'white', border: 'none', borderRadius: '10px',
+                padding: '10px 20px', fontSize: '14px', fontWeight: '600',
+                cursor: 'pointer',
+              }}>+ İlk sütununu ekle</button>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', minWidth: 'max-content' }}>
             <SortableContext items={columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
               {columns.map(col => (
@@ -310,7 +365,7 @@ export default function BoardPage() {
             {showColInput ? (
               <form onSubmit={handleAddColumn} style={{
                 background: '#f0f2ff', borderRadius: '14px', padding: '14px',
-                width: '280px', flexShrink: 0,
+                width: 'min(280px, 80vw)', flexShrink: 0,
               }}>
                 <input autoFocus value={newColTitle} onChange={e => setNewColTitle(e.target.value)}
                   placeholder="Sütun adı..." style={{
@@ -329,13 +384,13 @@ export default function BoardPage() {
                   }}>İptal</button>
                 </div>
               </form>
-            ) : (
+            ) : (columns.length > 0 && (
               <button onClick={() => setShowColInput(true)} style={{
                 background: 'rgba(255,255,255,0.7)', border: '2px dashed #c0c4f0',
-                borderRadius: '14px', padding: '14px 20px', width: '280px', flexShrink: 0,
+                borderRadius: '14px', padding: '14px 20px', width: 'min(280px, 80vw)', flexShrink: 0,
                 fontSize: '14px', color: '#667eea', cursor: 'pointer', textAlign: 'left', fontWeight: '600',
               }}>+ Sütun ekle</button>
-            )}
+            ))}
           </div>
 
           <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
@@ -356,6 +411,22 @@ export default function BoardPage() {
           </DragOverlay>
         </DndContext>
       </div>
+      )}
+
+      {editingBoardTitle && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setEditingBoardTitle(false)}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '24px', width: '380px' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: '700' }}>Board adı</h3>
+            <input autoFocus value={boardTitleDraft} onChange={e => setBoardTitleDraft(e.target.value)}
+              onKeyDown={async (e) => { if (e.key === 'Enter' && boardTitleDraft.trim()) { await updateBoardTitle(boardId, boardTitleDraft.trim()); setEditingBoardTitle(false) } }}
+              style={{ width: '100%', border: '1.5px solid #e0e0e0', borderRadius: '8px', padding: '9px 12px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}/>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setEditingBoardTitle(false)} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '9px 18px', fontSize: '14px', color: '#888', cursor: 'pointer' }}>İptal</button>
+              <button onClick={async () => { if (!boardTitleDraft.trim()) return; await updateBoardTitle(boardId, boardTitleDraft.trim()); setEditingBoardTitle(false) }} style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Kaydet</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingColumn && (
         <div style={{

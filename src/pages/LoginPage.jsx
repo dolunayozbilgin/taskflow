@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const { signIn, signUp } = useAuthStore()
   const navigate = useNavigate()
@@ -14,11 +15,19 @@ export default function LoginPage() {
   const handle = async (e) => {
     e.preventDefault()
     setError('')
+    setSuccessMsg('')
     setLoading(true)
     try {
-      if (isLogin) await signIn(email, password)
-      else await signUp(email, password)
-      navigate('/')
+      if (isLogin) {
+        await signIn(email, password)
+        navigate('/')
+      } else {
+        await signUp(email, password)
+        await useAuthStore.getState().signOut()
+        setIsLogin(true)
+        setPassword('')
+        setSuccessMsg('Hesap oluşturuldu! Şimdi giriş yapabilirsin.')
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -116,6 +125,15 @@ export default function LoginPage() {
               fontSize: '13px', color: '#e53e3e',
             }}>
               {error}
+            </div>
+          )}
+          {successMsg && (
+            <div style={{
+              background: '#f0fff4', border: '1px solid #c6f6d5',
+              borderRadius: '8px', padding: '10px 14px',
+              fontSize: '13px', color: '#2f855a',
+            }}>
+              {successMsg}
             </div>
           )}
 

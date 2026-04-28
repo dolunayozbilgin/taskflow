@@ -2,42 +2,6 @@
 
 Trello benzeri, sürükle-bırak destekli görev yönetim uygulaması.
 
-## 🌐 Canlı Demo
-
-[taskflow-dusky-beta.vercel.app](https://taskflow-dusky-beta.vercel.app)
-
-## 📋 Özellikler
-
-- Email/şifre ile kayıt ve giriş
-- Board oluşturma, düzenleme ve silme
-- Sütun ekleme, yeniden adlandırma ve silme
-- Kart ekleme, başlık/açıklama düzenleme ve silme
-- Sürükle-bırak ile kartları sütunlar arasında taşıma
-- Sütunları sürükle-bırak ile yeniden sıralama
-- Sıralama sayfa yenilemesinde korunur (Supabase'e kaydedilir)
-- Mobil uyumlu tasarım ve dokunmatik sürükle-bırak desteği
-- Kullanıcıya özel veriler — her kullanıcı sadece kendi board'larını görür
-
-## 🛠 Teknoloji Seçimleri
-
-### Frontend
-- **React + Vite** — Hızlı geliştirme ortamı, minimal yapılandırma
-- **dnd-kit** — Modern, aktif geliştirilen sürükle-bırak kütüphanesi. `react-beautiful-dnd`'nin aksine bakımı devam ediyor, TypeScript desteği ve accessibility özellikleri güçlü
-- **Zustand** — Basit ve performanslı state yönetimi
-- **React Router** — Sayfa yönlendirme
-
-### Backend
-- **Supabase** — PostgreSQL tabanlı backend-as-a-service. Auth, veritabanı ve REST API tek pakette. Row Level Security (RLS) ile kullanıcı verisi izolasyonu
-
-### Deploy
-- **Vercel** — Otomatik GitHub entegrasyonu, sıfır yapılandırma
-
-## 📊 Veri Modeli
-cat > README.md << 'EOF'
-# TaskFlow — Kanban Proje Yönetim Tahtası
-
-Trello benzeri, sürükle-bırak destekli görev yönetim uygulaması.
-
 ## Canlı Demo
 
 https://taskflow-dusky-beta.vercel.app
@@ -86,6 +50,6 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 npm run dev
 
-## Mobil
+## Mobil ve Dokunmatik Ekran
 
-Dokunmatik sürükle-bırak TouchSensor ile desteklenir. Kart üzerine uzun basarak sürükleme başlatılır.
+Sürükle-bırak hem mouse hem de dokunmatik ekran için desteklenir. Dokunmatik ekranlarda (telefon, tablet) kart üzerine uzun basarak sürükleme başlatılır ve daha akıcı çalışır. Laptop touchpad ile sürükleme tarayıcının kendi davranışı nedeniyle beklendiği gibi çalışmayabilir — en iyi deneyim için gerçek bir dokunmatik ekran veya harici mouse kullanılması önerilir.

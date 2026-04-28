@@ -4,7 +4,7 @@ import { useBoardStore } from '../store/boardStore'
 import { useAuthStore } from '../store/authStore'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors,
-  closestCorners, defaultDropAnimationSideEffects,
+  closestCenter, defaultDropAnimationSideEffects,
 } from '@dnd-kit/core'
 import {
   SortableContext, horizontalListSortingStrategy,
@@ -22,7 +22,8 @@ function CardItem({ card, onEdit, onDelete }) {
       transform: CSS.Transform.toString(transform), transition,
       opacity: isDragging ? 0.4 : 1,
       background: 'white', borderRadius: '10px',
-      padding: '12px 14px', marginBottom: '8px',
+      padding: '14px 14px', marginBottom: '10px',
+      minHeight: '56px',
       border: '1px solid #eee',
       boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.12)' : '0 1px 3px rgba(0,0,0,0.06)',
       userSelect: 'none',
@@ -201,7 +202,7 @@ export default function BoardPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 12 } }),
   )
 
   useEffect(() => {
@@ -266,7 +267,7 @@ export default function BoardPage() {
       } else {
         const overIdx = colCards.findIndex(c => c.id === over.id)
         if (overIdx === -1) {
-          newPosition = colCards.length === 0 ? 1000 : colCards[colCards.length - 1].position + 1000
+          newPosition = colCards[colCards.length - 1].position + 1000
         } else {
           const prev = overIdx > 0 ? colCards[overIdx - 1].position : 0
           const next = colCards[overIdx].position
@@ -316,7 +317,7 @@ export default function BoardPage() {
         </div>
       ) : (
       <div style={{ flex: 1, overflowX: 'auto', padding: '24px' }}>
-        <DndContext sensors={sensors} collisionDetection={closestCorners}
+        <DndContext sensors={sensors} collisionDetection={closestCenter}
           onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {columns.length === 0 && !showColInput && (
             <div style={{

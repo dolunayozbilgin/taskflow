@@ -112,5 +112,23 @@ export const useBoardStore = create((set, get) => ({
       )
     }))
     await supabase.from('cards').update({ column_id: newColumnId, position: newPosition }).eq('id', cardId)
+
+    // Position değerleri çok yaklaşırsa normalize et
+    const { cards } = useBoardStore.getState()
+    const colCards = cards.filter(c => c.column_id === newColumnId).sort((a, b) => a.position - b.position)
+    const needsNormalize = colCards.some((c, i) => {
+      if (i === 0) return false
+      return Math.abs(c.position - colCards[i-1].position) < 1
+    })
+    if (needsNormalize) {
+      const normalized = colCards.map((c, i) => ({ ...c, position: (i + 1) * 1000 }))
+      useBoardStore.setState(s => ({
+        cards: s.cards.map(c => {
+          const n = normalized.find(n => n.id === c.id)
+          return n ? { ...c, position: n.position } : c
+        })
+      }))
+      await supabase.from('cards').upsert(normalized.map(c => ({ id: c.id, position: c.position })))
+    }
   },
 }))
